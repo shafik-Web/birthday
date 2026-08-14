@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sophie's Birthday Celebration</title>
+    <meta name="description" content="Digital invitation for Sophie's birthday celebration.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Parisienne&family=Jost:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Bootstrap 5 (CSS only — all interactivity below is hand-written vanilla JS) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+     DESIGN TOKENS
+     A single vertical "digital invitation" scroll — lavender,
+     blush and gold florals on warm parchment.
+     ============================================================ */
+        :root {
+            --bg-cream: #FBF7F2;
+            --bg-panel: #F5EFFA;
+            --lavender: #B79BDB;
+            --lavender-soft: #E4D8F3;
+            --lavender-deep: #6E4A93;
+            --plum-ink: #3E2A50;
+            --plum-soft: #7C6690;
+            --blush: #EFC9DC;
+            --gold: #B9924F;
+
+            --font-display: 'Playfair Display', 'Georgia', serif;
+            --font-script: 'Parisienne', cursive;
+            --font-body: 'Jost', 'Segoe UI', sans-serif;
+
+            --radius-lg: 26px;
+            --radius-md: 16px;
+            --radius-pill: 999px;
+
+            --shadow-soft: 0 24px 48px -26px rgba(110, 74, 147, 0.45);
+            --shadow-tight: 0 10px 24px -14px rgba(62, 42, 80, 0.3);
+
+            --space-section: clamp(3.5rem, 8vw, 6rem);
+            --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg-cream);
+            color: var(--plum-ink);
+            font-family: var(--font-body);
+            font-weight: 400;
+            line-height: 1.65;
+            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        .display-font {
+            font-family: var(--font-display);
+            color: var(--plum-ink);
+        }
+
+        .script-font {
+            font-family: var(--font-script);
+            line-height: 1.2;
+        }
+
+        a {
+            color: var(--lavender-deep);
+        }
+
+        .skip-link {
+            position: absolute;
+            left: -999px;
+            top: 0;
+            z-index: 2000;
+            background: var(--plum-ink);
+            color: #fff;
+            padding: .75rem 1.25rem;
+            border-radius: 0 0 var(--radius-md) 0;
+            font-weight: 600;
+        }
+
+        .skip-link:focus {
+            left: 0;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 3px solid var(--gold);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        /* Single narrow "invitation card" column, like a phone-width panel */
+        .invite-frame {
+            max-width: 620px;
+            margin-inline: auto;
+            position: relative;
+            background: var(--bg-cream);
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* ============================================================
+     CANVAS PETAL DRIFT (cursor / scroll sparkle)
+     ============================================================ */
+        #petal-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* ============================================================
+     FLORAL CORNER ORNAMENTS
+     ============================================================ */
+        .corner-ornament {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            opacity: .9;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .corner-tl {
+            top: 0;
+            left: 0;
+        }
+
+        .corner-tr {
+            top: 0;
+            right: 0;
+            transform: scaleX(-1);
+        }
+
+        .corner-bl {
+            bottom: 0;
+            left: 0;
+            transform: scaleY(-1);
+        }
+
+        .corner-br {
+            bottom: 0;
+            right: 0;
+            transform: scale(-1, -1);
+        }
+
+        /* ============================================================
+     SCROLL ANIMATION — replays every time an element crosses
+     the viewport (both entering and leaving), driven purely by
+     IntersectionObserver toggling a class.
+     ============================================================ */
+        [data-reveal] {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity .7s var(--ease-bounce), transform .7s var(--ease-bounce);
+            transition-delay: var(--reveal-delay, 0s);
+            will-change: opacity, transform;
+        }
+
+        [data-reveal].is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        [data-reveal="zoom"] {
+            transform: scale(.88);
+        }
+
+        [data-reveal="zoom"].is-visible {
+            transform: scale(1);
+        }
+
+        [data-reveal="left"] {
+            transform: translateX(-32px);
+        }
+
+        [data-reveal="left"].is-visible {
+            transform: translateX(0);
+        }
+
+        [data-reveal="right"] {
+            transform: translateX(32px);
+        }
+
+        [data-reveal="right"].is-visible {
+            transform: translateX(0);
+        }
+
+        /* ============================================================
+     SECTION SCAFFOLD
+     ============================================================ */
+        .panel {
+            position: relative;
+            padding: var(--space-section) 1.75rem;
+            text-align: center;
+        }
+
+        .panel-alt {
+            background: var(--bg-panel);
+        }
+
+        .eyebrow {
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            font-size: .72rem;
+            color: var(--lavender-deep);
+        }
+
+        .divider {
+            width: 64px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.1rem auto;
+            border: none;
+        }
+
+        /* ============================================================
+     HERO / COVER
+     ============================================================ */
+        .cover {
+            padding-top: 3.5rem;
+        }
+
+        .cover-quote {
+            font-family: var(--font-display);
+            font-style: italic;
+            font-size: .95rem;
+            color: var(--plum-soft);
+            max-width: 30ch;
+            margin-inline: auto;
+        }
+
+        .crown-icon {
+            width: 46px;
+            height: 46px;
+            margin-block: 1.25rem;
+        }
+
+        .cover-title {
+            font-size: 1.5rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 1.75rem;
+        }
+
+        .photo-frame {
+            position: relative;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            background: linear-gradient(160deg, var(--lavender-soft), var(--blush));
+        }
+
+        .photo-frame.portrait {
+            width: min(280px, 80%);
+            aspect-ratio: 3 / 4;
+            margin-inline: auto;
+        }
+
+        .photo-frame.wide {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+        }
+
+        .photo-frame.square {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        }
+
+        .photo-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            color: var(--lavender-deep);
+            text-align: center;
+            padding: .75rem;
+        }
+
+        .photo-placeholder svg {
+            width: 50px;
+            height: 50px;
+            opacity: .85;
+        }
+
+        .photo-placeholder span {
+            font-size: .74rem;
+            font-weight: 500;
+            opacity: .85;
+        }
+
+        .guest-name {
+            font-size: clamp(2.4rem, 8vw, 3rem);
+            margin-top: 1.75rem;
+            color: var(--lavender-deep);
+        }
+
+        .audio-toggle {
+            all: unset;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: .6rem;
+            margin-top: 1.75rem;
+            padding: .55rem 1.1rem;
+            border-radius: var(--radius-pill);
+            background: var(--bg-panel);
+            box-shadow: var(--shadow-tight);
+            font-size: .82rem;
+            color: var(--plum-ink);
+        }
+
+        .audio-toggle .bars {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 14px;
+        }
+
+        .audio-toggle .bars span {
+            width: 2.5px;
+            background: var(--lavender-deep);
+            border-radius: 1px;
+            animation: eq 1s ease-in-out infinite;
+        }
+
+        .audio-toggle .bars span:nth-child(1) {
+            height: 40%;
+            animation-delay: 0s;
+        }
+
+        .audio-toggle .bars span:nth-child(2) {
+            height: 100%;
+            animation-delay: .15s;
+        }
+
+        .audio-toggle .bars span:nth-child(3) {
+            height: 60%;
+            animation-delay: .3s;
+        }
+
+        .audio-toggle:not(.is-playing) .bars span {
+            animation-play-state: paused;
+            height: 30%;
+        }
+
+        @keyframes eq {
+
+            0%,
+            100% {
+                transform: scaleY(.4);
+            }
+
+            50% {
+                transform: scaleY(1);
+            }
+        }
+
+        .host-note {
+            margin-top: 2.25rem;
+            font-size: .92rem;
+            color: var(--plum-soft);
+            max-width: 34ch;
+            margin-inline: auto;
+        }
+
+        .host-names {
+            font-family: var(--font-display);
+            font-style: italic;
+            font-weight: 600;
+            color: var(--plum-ink);
+            margin-top: .35rem;
+        }
+
+        .date-block {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: .9rem;
+            margin-top: 2.5rem;
+        }
+
+        .date-block .month {
+            writing-mode: vertical-rl;
+            text-transform: uppercase;
+            letter-spacing: .2em;
+            font-size: .7rem;
+            color: var(--lavender-deep);
+            font-weight: 600;
+        }
+
+        .date-block .day {
+            font-family: var(--font-display);
+            font-size: 3.5rem;
+            color: var(--lavender-deep);
+            line-height: 1;
+        }
+
+        .date-block .weekday {
+            text-transform: uppercase;
+            font-size: .7rem;
+            letter-spacing: .18em;
+            color: var(--plum-soft);
+            font-weight: 600;
+        }
+
+        /* Countdown */
+        .countdown-label {
+            text-transform: uppercase;
+            letter-spacing: .2em;
+            font-size: .72rem;
+            font-weight: 600;
+            color: var(--lavender-deep);
+            margin-top: 2.5rem;
+        }
+
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: .85rem;
+            margin-top: .85rem;
+        }
+
+        .countdown .unit {
+            text-align: center;
+            min-width: 52px;
+        }
+
+        .countdown .value {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            color: var(--plum-ink);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .countdown .label {
+            font-size: .62rem;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--plum-soft);
+        }
+
+        .countdown .sep {
+            font-family: var(--font-display);
+            font-size: 1.9rem;
+            color: var(--lavender);
+        }
+
+        /* ============================================================
+     PARTY DETAILS
+     ============================================================ */
+        .reception-time {
+            font-weight: 600;
+            letter-spacing: .08em;
+            color: var(--plum-soft);
+            font-size: .85rem;
+        }
+
+        .reception-title {
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            font-size: 1.3rem;
+            margin: .4rem 0 .2rem;
+        }
+
+        .reception-venue {
+            font-family: var(--font-display);
+            font-style: italic;
+            color: var(--plum-soft);
+        }
+
+        .map-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            margin-top: 1.4rem;
+            background: var(--lavender-deep);
+            color: #fff;
+            padding: .6rem 1.4rem;
+            border-radius: var(--radius-pill);
+            font-size: .82rem;
+            font-weight: 600;
+            letter-spacing: .04em;
+            box-shadow: var(--shadow-tight);
+            text-decoration: none;
+            transition: transform .3s var(--ease-bounce);
+        }
+
+        .map-btn:hover {
+            transform: translateY(-3px);
+            color: #fff;
+        }
+
+        .balloon-number {
+            display: flex;
+            justify-content: center;
+            margin-top: 2.5rem;
+        }
+
+        .balloon-number svg {
+            filter: drop-shadow(var(--shadow-tight));
+        }
+
+        /* ============================================================
+     PHOTO GALLERY SECTIONS
+     ============================================================ */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.75rem;
+        }
+
+        .gallery-caption {
+            font-size: .82rem;
+            color: var(--plum-soft);
+            margin-top: .5rem;
+        }
+
+        /* ============================================================
+     ITINERARY TIMELINE
+     ============================================================ */
+        .itinerary-list {
+            text-align: left;
+            max-width: 380px;
+            margin-inline: auto;
+        }
+
+        .itinerary-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding-block: .85rem;
+            border-bottom: 1px dashed var(--lavender-soft);
+        }
+
+        .itinerary-item:last-child {
+            border-bottom: none;
+        }
+
+        .itinerary-icon {
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--bg-panel);
+        }
+
+        .itinerary-icon svg {
+            width: 19px;
+            height: 19px;
+        }
+
+        .itinerary-time {
+            font-weight: 600;
+            font-size: .78rem;
+            color: var(--lavender-deep);
+            display: block;
+        }
+
+        .itinerary-label {
+            font-size: .92rem;
+            color: var(--plum-ink);
+        }
+
+        /* ============================================================
+     DRESS CODE
+     ============================================================ */
+        .dress-code-tag {
+            display: inline-block;
+            font-family: var(--font-display);
+            font-style: italic;
+            font-size: 1.3rem;
+            color: var(--lavender-deep);
+        }
+
+        .swatch-row {
+            display: flex;
+            justify-content: center;
+            gap: .7rem;
+            margin: 1.25rem 0;
+        }
+
+        .swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            box-shadow: var(--shadow-tight);
+            border: 2px solid #fff;
+        }
+
+        .dress-icons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .dress-icons svg {
+            width: 34px;
+            height: 34px;
+        }
+
+        .dress-note {
+            font-size: .85rem;
+            color: var(--plum-soft);
+            max-width: 32ch;
+            margin: 1rem auto 0;
+        }
+
+        /* ============================================================
+     GIFT SUGGESTION
+     ============================================================ */
+        .gift-card {
+            background: var(--bg-panel);
+            border-radius: var(--radius-lg);
+            padding: 2rem 1.5rem;
+            max-width: 380px;
+            margin-inline: auto;
+            box-shadow: var(--shadow-tight);
+        }
+
+        .gift-card svg {
+            width: 42px;
+            height: 42px;
+            margin-bottom: .75rem;
+        }
+
+        .gift-card h3 {
+            font-size: 1.05rem;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+        }
+
+        .gift-card p {
+            font-size: .88rem;
+            color: var(--plum-soft);
+            margin-bottom: 0;
+        }
+
+        /* ============================================================
+     RSVP
+     ============================================================ */
+        .rsvp-btn {
+            all: unset;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            background: linear-gradient(135deg, var(--lavender) 0%, var(--lavender-deep) 100%);
+            color: #fff;
+            font-weight: 600;
+            padding: .75rem 1.8rem;
+            border-radius: var(--radius-pill);
+            box-shadow: var(--shadow-tight);
+            transition: transform .3s var(--ease-bounce);
+            margin-top: 1.25rem;
+        }
+
+        .rsvp-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .rsvp-confirmation {
+            display: none;
+            align-items: center;
+            gap: .5rem;
+            justify-content: center;
+            margin-top: 1.1rem;
+            background: #EDE3F7;
+            border-radius: var(--radius-md);
+            padding: .7rem 1rem;
+            color: var(--lavender-deep);
+            font-weight: 600;
+            font-size: .85rem;
+        }
+
+        .rsvp-confirmation.is-shown {
+            display: inline-flex;
+        }
+
+        /* ============================================================
+     CLOSING
+     ============================================================ */
+        .closing-script {
+            font-size: 2.4rem;
+            color: var(--lavender-deep);
+            margin-top: .5rem;
+        }
+
+        /* ============================================================
+     REDUCED MOTION — content stays fully visible, no replay
+     ============================================================ */
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            * {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+            }
+
+            [data-reveal] {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <canvas id="petal-canvas" aria-hidden="true"></canvas>
+
+    <!-- Reusable floral ornament, referenced via <use> -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+            <g id="floral-corner">
+                <path d="M4 4C30 6 46 20 52 44" stroke="#B79BDB" stroke-width="1.4" fill="none" opacity=".55" />
+                <ellipse cx="18" cy="14" rx="10" ry="6" fill="#E4D8F3" transform="rotate(-18 18 14)" />
+                <ellipse cx="30" cy="10" rx="8" ry="5" fill="#EFC9DC" transform="rotate(10 30 10)" />
+                <ellipse cx="10" cy="26" rx="7" ry="5" fill="#B79BDB" opacity=".7" transform="rotate(30 10 26)" />
+                <circle cx="42" cy="30" r="3" fill="#B9924F" opacity=".6" />
+                <circle cx="24" cy="30" r="2.4" fill="#B9924F" opacity=".6" />
+                <path d="M6 40c8-4 14-2 18 4" stroke="#B79BDB" stroke-width="1.2" fill="none" opacity=".5" />
+            </g>
+            <g id="photo-icon">
+                <rect x="8" y="14" width="48" height="38" rx="4" stroke="#6E4A93" stroke-width="2" />
+                <circle cx="32" cy="32" r="10" stroke="#6E4A93" stroke-width="2" />
+                <circle cx="32" cy="32" r="4" fill="#6E4A93" />
+                <rect x="24" y="8" width="16" height="8" rx="2" fill="#6E4A93" />
+            </g>
+        </defs>
+    </svg>
+
+    <main id="main-content">
+        <div class="invite-frame">
+
+            <!-- ============================= COVER ============================= -->
+            <section class="panel cover" aria-labelledby="cover-heading">
+                <svg class="corner-ornament corner-tl" viewBox="0 0 60 50" aria-hidden="true">
+                    <use href="#floral-corner" />
+                </svg>
+                <svg class="corner-ornament corner-tr" viewBox="0 0 60 50" aria-hidden="true">
+                    <use href="#floral-corner" />
+                </svg>
+
+                <p class="cover-quote" data-reveal>
+                    &ldquo;Some moments are treasured in the heart forever &mdash; I want you to be part of mine.&rdquo;
+                </p>
+
+                <svg class="crown-icon" viewBox="0 0 48 48" fill="none" aria-hidden="true" data-reveal="zoom"
+                    style="--reveal-delay:.1s">
+                    <path d="M8 34 5 16l9 8 10-14 10 14 9-8-3 18Z" fill="#B79BDB" stroke="#6E4A93" stroke-width="1.4"
+                        stroke-linejoin="round" />
+                    <rect x="8" y="34" width="32" height="5" rx="1.5" fill="#6E4A93" />
+                    <circle cx="24" cy="14" r="2.6" fill="#B9924F" />
+                </svg>
+
+                <p id="cover-heading" class="cover-title" data-reveal style="--reveal-delay:.15s">Birthday Celebration
+                </p>
+
+                <div class="photo-frame portrait" data-reveal="zoom" style="--reveal-delay:.2s">
+                    <div class="photo-placeholder">
+                        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                            <use href="#photo-icon" />
+                        </svg>
+                        <span>Add your favorite photo here</span>
+                    </div>
+                </div>
+
+                <p class="guest-name script-font" data-reveal style="--reveal-delay:.25s">Sophie Bennett</p>
+
+                <button type="button" class="audio-toggle" id="audioToggle" aria-pressed="false" data-reveal
+                    style="--reveal-delay:.3s">
+                    <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
+                    <span id="audioToggleLabel">Play music</span>
+                </button>
+
+                <p class="host-note" data-reveal style="--reveal-delay:.35s">
+                    With so much love from my parents, I can't wait to celebrate this special day with you.
+                    <span class="host-names">James &amp; Olivia Bennett</span>
+                </p>
+
+                <div class="date-block" data-reveal style="--reveal-delay:.4s">
+                    <span class="month">September</span>
+                    <span class="day">12</span>
+                    <div>
+                        <span class="weekday">Saturday</span><br>
+                        <span class="weekday" style="color:var(--lavender-deep)">2026</span>
+                    </div>
+                </div>
+
+                <p class="countdown-label" data-reveal style="--reveal-delay:.45s">Counting down</p>
+                <div class="countdown" id="countdown" data-reveal style="--reveal-delay:.5s" role="timer"
+                    aria-live="off">
+                    <div class="unit"><span class="value" id="cd-days">00</span><span class="label">Days</span></div>
+                    <span class="sep">:</span>
+                    <div class="unit"><span class="value" id="cd-hours">00</span><span class="label">Hrs</span></div>
+                    <span class="sep">:</span>
+                    <div class="unit"><span class="value" id="cd-mins">00</span><span class="label">Min</span></div>
+                    <span class="sep">:</span>
+                    <div class="unit"><span class="value" id="cd-secs">00</span><span class="label">Sec</span></div>
+                </div>
+            </section>
+
+            <!-- ============================= PARTY DETAILS ============================= -->
+            <section class="panel panel-alt" aria-labelledby="party-heading">
+                <svg class="corner-ornament corner-tl" viewBox="0 0 60 50" aria-hidden="true">
+                    <use href="#floral-corner" />
+                </svg>
+                <svg class="corner-ornament corner-tr" viewBox="0 0 60 50" aria-hidden="true">
+                    <use href="#floral-corner" />
+                </svg>
+
+                <p class="reception-time" data-reveal>3:00 PM</p>
+                <h2 id="party-heading" class="reception-title" data-reveal style="--reveal-delay:.05s">The Celebration
+                </h2>
+                <p class="reception-venue" data-reveal style="--reveal-delay:.1s">Rosewood Garden Pavilion<br>24 Maple
+                    Street, Springfield</p>
+
+                <a class="map-btn" href="https://maps.google.com/?q=Rosewood+Garden+Pavilion+Springfield"
+                    target="_blank" rel="noopener" data-reveal style="--reveal-delay:.15s">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+                        <path d="M12 21s-6.9-5.6-6.9-11A6.9 6.9 0 0 1 12 3a6.9 6.9 0 0 1 6.9 7c0 5.4-6.9 11-6.9 11Z"
+                            stroke="#fff" stroke-width="1.8" />
+                        <circle cx="12" cy="10" r="2.3" stroke="#fff" stroke-width="1.8" />
+                    </svg>
+                    Get Directions
+                </a>
+
+                <div class="balloon-number" data-reveal="zoom" style="--reveal-delay:.25s"
+                    aria-label="Balloon shaped like the number seven" role="img">
+                    <svg width="90" height="160" viewBox="0 0 90 160" aria-hidden="true">
+                        <ellipse cx="45" cy="58" rx="34" ry="50" fill="url(#g1)" />
+                        <line x1="45" y1="108" x2="45" y2="148" stroke="#B79BDB" stroke-width="2" />
+                        <path d="M28 36h34l-20 46" stroke="#fff" stroke-width="7" stroke-linecap="round"
+                            stroke-linejoin="round" fill="none" />
+                        <defs>
+                            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#D9C6F0" />
+                                <stop offset="1" stop-color="#B79BDB" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </section>
+
+            <!-- ============================= PHOTO GALLERY 1 ============================= -->
+            <section class="panel" aria-labelledby="gallery1-heading">
+                <p class="eyebrow" data-reveal>Photo album</p>
+                <h2 id="gallery1-heading" class="reception-title" data-reveal style="--reveal-delay:.05s">Sweet Moments
+                </h2>
+                <hr class="divider" data-reveal style="--reveal-delay:.1s">
+
+                <div class="gallery-grid">
+                    <div>
+                        <div class="photo-frame square" data-reveal="left" style="--reveal-delay:.1s">
+                            <div class="photo-placeholder">
+                                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                    <use href="#photo-icon" />
+                                </svg>
+                                <span>Add photo</span>
+                            </div>
+                        </div>
+                        <p class="gallery-caption">First day of school</p>
+                    </div>
+                    <div>
+                        <div class="photo-frame square" data-reveal="right" style="--reveal-delay:.15s">
+                            <div class="photo-placeholder">
+                                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                    <use href="#photo-icon" />
+                                </svg>
+                                <span>Add photo</span>
+                            </div>
+                        </div>
+                        <p class="gallery-caption">Summer at the beach</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================= FEATURE PHOTO ============================= -->
+            <section class="panel panel-alt" aria-labelledby="feature-heading">
+                <p class="eyebrow" data-reveal>A year to remember</p>
+                <h2 id="feature-heading" class="reception-title" data-reveal style="--reveal-delay:.05s">Getting Ready
+                    to Turn 7</h2>
+
+                <div class="photo-frame wide mt-4" data-reveal="zoom" style="--reveal-delay:.15s">
+                    <div class="photo-placeholder">
+                        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                            <use href="#photo-icon" />
+                        </svg>
+                        <span>Add your favorite big photo here</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================= ITINERARY ============================= -->
+            <section class="panel" aria-labelledby="itinerary-heading">
+                <p class="eyebrow" data-reveal>Schedule</p>
+                <h2 id="itinerary-heading" class="reception-title" data-reveal style="--reveal-delay:.05s">How the
+                    Afternoon Unfolds</h2>
+                <hr class="divider" data-reveal style="--reveal-delay:.1s">
+
+                <ul class="itinerary-list list-unstyled" data-reveal style="--reveal-delay:.15s">
+                    <li class="itinerary-item">
+                        <span class="itinerary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M12 21s-6.9-5.6-6.9-11A6.9 6.9 0 0 1 12 3a6.9 6.9 0 0 1 6.9 7c0 5.4-6.9 11-6.9 11Z"
+                                    stroke="#6E4A93" stroke-width="1.8" />
+                            </svg></span>
+                        <span><span class="itinerary-time">3:00 PM</span><span class="itinerary-label">Arrival &amp;
+                                face painting</span></span>
+                    </li>
+                    <li class="itinerary-item">
+                        <span class="itinerary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="7" r="3" stroke="#6E4A93" stroke-width="1.8" />
+                                <path d="M6 21c0-4 3-7 6-7s6 3 6 7" stroke="#6E4A93" stroke-width="1.8" />
+                            </svg></span>
+                        <span><span class="itinerary-time">3:30 PM</span><span class="itinerary-label">Garden
+                                games</span></span>
+                    </li>
+                    <li class="itinerary-item">
+                        <span class="itinerary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">
+                                <path d="M12 2 14 9 21 9 15.5 13.5 17.5 20.5 12 16.5 6.5 20.5 8.5 13.5 3 9 10 9Z"
+                                    stroke="#6E4A93" stroke-width="1.6" stroke-linejoin="round" />
+                            </svg></span>
+                        <span><span class="itinerary-time">4:15 PM</span><span class="itinerary-label">Treasure
+                                hunt</span></span>
+                    </li>
+                    <li class="itinerary-item">
+                        <span class="itinerary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">
+                                <path d="M4 10h16M6 6h12l2 4v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9Z" stroke="#6E4A93"
+                                    stroke-width="1.8" stroke-linejoin="round" />
+                            </svg></span>
+                        <span><span class="itinerary-time">5:00 PM</span><span class="itinerary-label">Cake &amp;
+                                wishes</span></span>
+                    </li>
+                    <li class="itinerary-item">
+                        <span class="itinerary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">
+                                <path d="M9 18V5l11-2v13" stroke="#6E4A93" stroke-width="1.8" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                <circle cx="6" cy="18" r="3" stroke="#6E4A93" stroke-width="1.8" />
+                                <circle cx="17" cy="16" r="3" stroke="#6E4A93" stroke-width="1.8" />
+                            </svg></span>
+                        <span><span class="itinerary-time">5:30 PM</span><span class="itinerary-label">Dance
+                                party</span></span>
+                    </li>
+                    <li class="itinerary-item">
+                        <span class="itinerary-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="9" stroke="#6E4A93" stroke-width="1.8" />
+                                <path d="M12 7v5l3.2 2" stroke="#6E4A93" stroke-width="1.8" stroke-linecap="round" />
+                            </svg></span>
+                        <span><span class="itinerary-time">6:00 PM</span><span class="itinerary-label">Goodbyes &amp;
+                                favor bags</span></span>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- ============================= DRESS CODE ============================= -->
+            <section class="panel panel-alt" aria-labelledby="dress-heading">
+                <p class="eyebrow" data-reveal>What to wear</p>
+                <h2 id="dress-heading" class="dress-code-tag" data-reveal style="--reveal-delay:.05s">Garden Party Chic
+                </h2>
+
+                <div class="swatch-row" data-reveal style="--reveal-delay:.1s" aria-hidden="true">
+                    <span class="swatch" style="background:#B79BDB"></span>
+                    <span class="swatch" style="background:#EFC9DC"></span>
+                    <span class="swatch" style="background:#B9924F"></span>
+                </div>
+
+                <div class="dress-icons" data-reveal="zoom" style="--reveal-delay:.15s" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 3 8 7l1 3-4 10h14L15 10l1-3Z" fill="#B79BDB" />
+                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M9 3h6l1 3-2 2 3 12H7L10 8 8 6Z" fill="#EFC9DC" />
+                    </svg>
+                </div>
+
+                <p class="dress-note" data-reveal style="--reveal-delay:.2s">
+                    Come dressed in your favorite pinks, purples and golds — comfortable shoes recommended for garden
+                    games!
+                </p>
+            </section>
+
+            <!-- ============================= PHOTO GALLERY 2 ============================= -->
+            <section class="panel" aria-labelledby="gallery2-heading">
+                <p class="eyebrow" data-reveal>Sneak peek</p>
+                <h2 id="gallery2-heading" class="reception-title" data-reveal style="--reveal-delay:.05s">Party Sneak
+                    Peek</h2>
+                <hr class="divider" data-reveal style="--reveal-delay:.1s">
+
+                <div class="gallery-grid">
+                    <div>
+                        <div class="photo-frame square" data-reveal="left" style="--reveal-delay:.1s">
+                            <div class="photo-placeholder">
+                                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                    <use href="#photo-icon" />
+                                </svg>
+                                <span>Add photo</span>
+                            </div>
+                        </div>
+                        <p class="gallery-caption">Last year's cake smash</p>
+                    </div>
+                    <div>
+                        <div class="photo-frame square" data-reveal="right" style="--reveal-delay:.15s">
+                            <div class="photo-placeholder">
+                                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                                    <use href="#photo-icon" />
+                                </svg>
+                                <span>Add photo</span>
+                            </div>
+                        </div>
+                        <p class="gallery-caption">Best friends forever</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================= GIFT SUGGESTION ============================= -->
+            <section class="panel panel-alt" aria-labelledby="gift-heading">
+                <p class="eyebrow" data-reveal>A little note</p>
+                <h2 id="gift-heading" class="visually-hidden">Gift suggestions</h2>
+
+                <div class="gift-card" data-reveal="zoom" style="--reveal-delay:.1s">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style="margin-inline:auto; display:block;">
+                        <rect x="3" y="10" width="18" height="10" rx="1.5" stroke="#6E4A93" stroke-width="1.6" />
+                        <path
+                            d="M3 10h18M12 10v10M12 10c-2-4-6-4-7-1 0 1.5 2 1.5 7 1ZM12 10c2-4 6-4 7-1 0 1.5-2 1.5-7 1Z"
+                            stroke="#6E4A93" stroke-width="1.6" stroke-linejoin="round" />
+                    </svg>
+                    <h3>Your presence is the gift</h3>
+                    <p>Having you there to celebrate is truly all we need. If you'd still love to bring something, a
+                        book she can grow with would make her whole week.</p>
+                </div>
+            </section>
+
+            <!-- ============================= RSVP ============================= -->
+            <section class="panel" aria-labelledby="rsvp-heading">
+                <p class="eyebrow" data-reveal>Please respond</p>
+                <h2 id="rsvp-heading" class="reception-title" data-reveal style="--reveal-delay:.05s">Confirm Your Spot
+                </h2>
+                <p class="dress-note" data-reveal style="--reveal-delay:.1s">
+                    Please let us know you're coming by September 1, so we can save you a slice of cake.
+                </p>
+
+                <button type="button" class="rsvp-btn" id="rsvpBtn" data-reveal="zoom" style="--reveal-delay:.15s">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+                        <path d="M4 6h16v12H4z" stroke="#fff" stroke-width="1.6" />
+                        <path d="m4 7 8 6 8-6" stroke="#fff" stroke-width="1.6" />
+                    </svg>
+                    RSVP Now
+                </button>
+
+                <p class="rsvp-confirmation" id="rsvpConfirmation">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" fill="#6E4A93" />
+                        <path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Thank you for confirming! We can't wait to see you.
+                </p>
+            </section>
+
+            <!-- ============================= CLOSING ============================= -->
+            <footer class="panel" aria-label="Closing message">
+                <svg class="corner-ornament corner-bl" viewBox="0 0 60 50" aria-hidden="true">
+                    <use href="#floral-corner" />
+                </svg>
+                <svg class="corner-ornament corner-br" viewBox="0 0 60 50" aria-hidden="true">
+                    <use href="#floral-corner" />
+                </svg>
+                <p class="closing-script script-font" data-reveal>See you there!</p>
+            </footer>
+
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            "use strict";
+
+            var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            /* ============================================================
+               1. NATIVE SCROLL ANIMATION ENGINE — IntersectionObserver only.
+                  Unlike a "play once" reveal, this toggles the visible class
+                  on and off every time an element crosses the viewport
+                  threshold, so the animation replays on every scroll pass —
+                  scrolling down AND back up.
+               ============================================================ */
+            var revealTargets = document.querySelectorAll("[data-reveal]");
+            if ("IntersectionObserver" in window && revealTargets.length) {
+                var revealObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        entry.target.classList.toggle("is-visible", entry.isIntersecting);
+                    });
+                }, { threshold: 0.2, rootMargin: "0px 0px -6% 0px" });
+                revealTargets.forEach(function (el) { revealObserver.observe(el); });
+            } else {
+                revealTargets.forEach(function (el) { el.classList.add("is-visible"); });
+            }
+
+            /* ============================================================
+               2. CANVAS PETAL / SPARKLE DRIFT — lavender & gold, on
+                  pointer move and scroll velocity.
+               ============================================================ */
+            var canvas = document.getElementById("petal-canvas");
+            var ctx = canvas.getContext("2d");
+            var particles = [];
+            var dpr = Math.min(window.devicePixelRatio || 1, 2);
+            var palette = ["#D9C6F0", "#B79BDB", "#EFC9DC", "#C9A24B"];
+            var lastSpawn = 0;
+            var lastScrollY = window.scrollY;
+            var maxParticles = prefersReducedMotion ? 0 : 110;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth * dpr;
+                canvas.height = window.innerHeight * dpr;
+                canvas.style.width = window.innerWidth + "px";
+                canvas.style.height = window.innerHeight + "px";
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+            resizeCanvas();
+            window.addEventListener("resize", resizeCanvas);
+
+            function spawnParticle(x, y, boost) {
+                if (particles.length >= maxParticles) return;
+                var angle = Math.random() * Math.PI * 2;
+                var speed = (boost ? 1.4 : 0.5) + Math.random() * 1.1;
+                particles.push({
+                    x: x, y: y,
+                    vx: Math.cos(angle) * speed * 0.35,
+                    vy: Math.sin(angle) * speed * 0.35 - (boost ? 0.5 : 0.15),
+                    size: 2 + Math.random() * (boost ? 3.2 : 2.2),
+                    life: 1,
+                    decay: 0.01 + Math.random() * 0.012,
+                    color: palette[Math.floor(Math.random() * palette.length)],
+                    spin: Math.random() * Math.PI
+                });
+            }
+
+            function handlePointerMove(x, y) {
+                var now = performance.now();
+                if (now - lastSpawn < 26) return;
+                lastSpawn = now;
+                spawnParticle(x, y, false);
+            }
+
+            if (!prefersReducedMotion) {
+                window.addEventListener("pointermove", function (e) { handlePointerMove(e.clientX, e.clientY); }, { passive: true });
+                window.addEventListener("touchmove", function (e) {
+                    if (e.touches && e.touches[0]) handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+                }, { passive: true });
+                window.addEventListener("scroll", function () {
+                    var delta = window.scrollY - lastScrollY;
+                    lastScrollY = window.scrollY;
+                    if (Math.abs(delta) < 2) return;
+                    var count = Math.min(3, Math.ceil(Math.abs(delta) / 130));
+                    for (var i = 0; i < count; i++) {
+                        spawnParticle(window.innerWidth * (0.2 + Math.random() * 0.6), window.innerHeight * (0.15 + Math.random() * 0.7), false);
+                    }
+                }, { passive: true });
+            }
+
+            function tick() {
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                for (var i = particles.length - 1; i >= 0; i--) {
+                    var p = particles[i];
+                    p.x += p.vx; p.y += p.vy; p.vy += 0.005; p.life -= p.decay; p.spin += 0.04;
+                    if (p.life <= 0) { particles.splice(i, 1); continue; }
+
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(p.life, 0);
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.spin);
+
+                    var glow = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * 3);
+                    glow.addColorStop(0, p.color);
+                    glow.addColorStop(1, "rgba(255,255,255,0)");
+                    ctx.fillStyle = glow;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.size * 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -p.size);
+                    ctx.quadraticCurveTo(p.size, 0, 0, p.size);
+                    ctx.quadraticCurveTo(-p.size, 0, 0, -p.size);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+
+            /* ============================================================
+               3. COUNTDOWN TIMER — edit TARGET_DATE to match the real party.
+               ============================================================ */
+            var TARGET_DATE = new Date("2026-09-12T15:00:00");
+            var cdDays = document.getElementById("cd-days");
+            var cdHours = document.getElementById("cd-hours");
+            var cdMins = document.getElementById("cd-mins");
+            var cdSecs = document.getElementById("cd-secs");
+
+            function pad(n) { return String(n).padStart(2, "0"); }
+
+            function updateCountdown() {
+                var diff = TARGET_DATE.getTime() - Date.now();
+                if (diff < 0) diff = 0;
+                var days = Math.floor(diff / 86400000);
+                var hours = Math.floor((diff % 86400000) / 3600000);
+                var mins = Math.floor((diff % 3600000) / 60000);
+                var secs = Math.floor((diff % 60000) / 1000);
+                cdDays.textContent = pad(days);
+                cdHours.textContent = pad(hours);
+                cdMins.textContent = pad(mins);
+                cdSecs.textContent = pad(secs);
+            }
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+
+            /* ============================================================
+               4. MUSIC TOGGLE — visual state only.
+                  Add your own <audio id="bgAudio"> element and src to play
+                  a real track; this toggle already wires up play()/pause().
+               ============================================================ */
+            var audioToggle = document.getElementById("audioToggle");
+            var audioLabel = document.getElementById("audioToggleLabel");
+            var bgAudio = document.getElementById("bgAudio"); // optional, add your own <audio> tag
+
+            audioToggle.addEventListener("click", function () {
+                var isPlaying = audioToggle.classList.toggle("is-playing");
+                audioToggle.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+                audioLabel.textContent = isPlaying ? "Pause music" : "Play music";
+                if (bgAudio) {
+                    if (isPlaying) { bgAudio.play().catch(function () { }); } else { bgAudio.pause(); }
+                }
+            });
+
+            /* ============================================================
+               5. RSVP confirmation
+               ============================================================ */
+            var rsvpBtn = document.getElementById("rsvpBtn");
+            var rsvpConfirmation = document.getElementById("rsvpConfirmation");
+            rsvpBtn.addEventListener("click", function () {
+                rsvpConfirmation.classList.add("is-shown");
+                var rect = rsvpBtn.getBoundingClientRect();
+                for (var i = 0; i < (prefersReducedMotion ? 0 : 22); i++) {
+                    spawnParticle(rect.left + rect.width / 2, rect.top, true);
+                }
+                rsvpBtn.setAttribute("disabled", "true");
+            });
+        })();
+    </script>
+</body>
+
+</html>
